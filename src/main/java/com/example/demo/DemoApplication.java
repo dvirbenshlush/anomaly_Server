@@ -124,12 +124,10 @@ public class DemoApplication  implements CommandLineRunner{
 //	@Autowired
 //	 prinTest p;
 
-	@Autowired
-	private StandrtIO sio = new StandrtIO();
-
+	private StandrtIO sio;
+	@Autowired(required = false)
+	private Commands c;
 	CLI cli = new CLI(sio);
-//	@Autowired
-//	private CLI cli= new CLI(new StandrtIO(sf.getScanner()));
 
 	@Override
 	public void run(String... args) throws Exception {

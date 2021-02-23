@@ -32,14 +32,13 @@ public class CLI {
 		// implement
 	}
 
-
+	@CrossOrigin
 	@PostMapping("/add2/{t}")
-	public void start(@PathVariable String t) {
+	public String start(@PathVariable String t) {
 		// implement
 		System.out.println("Welcome to the Anomaly Detection Server.\n" +
 				"Please choose an option:\n");
-		System.out.println("option "+t);
 		commands.forEach(s->System.out.println(s.description));
-		commands.get(Integer.parseInt(t)-1).execute();
+		return commands.get(Integer.parseInt(t)-1).execute("sssss");
 	}
 }

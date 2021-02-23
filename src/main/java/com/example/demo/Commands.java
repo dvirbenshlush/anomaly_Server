@@ -1,7 +1,9 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.*;
@@ -10,17 +12,12 @@ import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 
-//@CrossOrigin
-//@RestController
-//@RequestMapping("api2/")
 public class Commands {
 
 	// Default IO interface
-//	@CrossOrigin
 	@Component
 	public interface DefaultIO{
 		public String readText();
-
 		public void write( String text);
 		public float readVal();
 		public void write( float val);
@@ -88,12 +85,15 @@ public class Commands {
 			{
 				input=dio.readText();
 			}
-			c.execute();
+			c.execute("sdd");
 		}
 	}
 
 	private  SharedState sharedState=new SharedState();
 
+//	@CrossOrigin(origins = "*", allowedHeaders = "*")
+//	@Controller
+//	@RestController
 
 	// Command abstract class
 	public abstract class Command{
@@ -103,7 +103,10 @@ public class Commands {
 			this.description=description;
 		}
 
-		public abstract void execute();
+		public abstract String execute(String text);
+
+//		@GetMapping(path = "/ret/{text}", produces = MediaType.TEXT_PLAIN_VALUE)
+		public abstract String writeToClient( String text);
 	}
 
 	public  class mainCommand extends Command{
@@ -116,37 +119,46 @@ public class Commands {
 //		@PostMapping("/add")
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			CLI cli= new CLI(dio);
 			cli.commands.forEach(command -> dio.write( command.description));
 			int clientNumber = (int) dio.readVal();
-			cli.commands.get(clientNumber).execute();
+			cli.commands.get(clientNumber).execute("s");
+			return "";
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return "null";
 		}
 	}
 
 	// Command class for example:
+	@CrossOrigin(value = {"http://localhost:3000"})
+	@RestController
+//	@RequestMapping("api")
 	public class uploadCommand extends Command{
 
 		public uploadCommand() {
 			super("1. upload a time series csv file\n");
 		}
+//		@RequestMapping("api/")
 
-		@Override
-		public void execute() {
-			StandrtIO dio = new StandrtIO();
-			dio.write("Please upload your local train CSV file.\n");
-			FileIO fio = new FileIO(sharedState.inputPath,sharedState.trainPath);
-			fio.uploadFile("done",sharedState.trainPath);
-			dio.write("Upload complete.\n");
-//			Scanner scanner = new Scanner(System.in);
-//			String input = scanner.nextLine();
-//			System.out.println(input);
-			FileIO fio2 = new FileIO(sharedState.inputPath2,sharedState.testPath);
-			dio.write("Please upload your local test CSV file.\n");
-			fio2.uploadFile("done",sharedState.testPath);
-			dio.write("Upload complete.\n");
-		//	sharedState.EnterClick(new mainCommand());
+//	@CrossOrigin
+	@Override
+		public String execute(String text) {
+
+		return  writeToClient("i am from server.\n");
 		}
+		@CrossOrigin(value = {"http://localhost:3000"})
+		@GetMapping(path = "/ret/text", produces = MediaType.TEXT_PLAIN_VALUE)
+		@Override
+		public String writeToClient(@RequestParam(defaultValue = "text") String text) {
+			System.out.println(text+" test");
+			return text;
+		}
+
+
 	}
 
 	public class algorithmCommand extends Command {
@@ -156,7 +168,7 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			dio.write("The current correlation threshold is " + sharedState.threshold + "\n");
 			dio.write("Type a new threshold or just press enter to exit without changing\n");
@@ -166,8 +178,16 @@ public class Commands {
 				sharedState.EnterClick(new mainCommand());
 			} else {
 				dio.write("please choose a value between 0 and 1.\n");
+				return null+"";
 		//		sharedState.EnterClick(new algorithmCommand());
 			}
+
+			return "";
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 	}
 
@@ -178,7 +198,7 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			sharedState.sad.learnNormal(ts);
 //			sharedState.sad.getNormalModel().forEach(t->t.threshold=sharedState.threshold);
@@ -186,7 +206,13 @@ public class Commands {
 			sharedState.sad.detect(ts2);
 			dio.write("anomaly detection complete.\n");
 		//	sharedState.EnterClick(new mainCommand());
+			return null+"";
 
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 	}
 
@@ -197,14 +223,20 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			sharedState.sad.learnNormal(ts);
 			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
 			sharedState.sad.detect(ts2).forEach(d->dio.write(d.timeStep+" "+d.description+"\n"));
 			dio.write("Done\n");
+			return null+"";
 		//	sharedState.EnterClick(new mainCommand());
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 	}
 
@@ -215,7 +247,7 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			FileIO fio = new FileIO(sharedState.trainPath,sharedState.resultPath);
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
@@ -223,7 +255,13 @@ public class Commands {
 			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
 			sharedState.sad.detect(ts2).forEach(d->fio.write(d.timeStep+" "+d.description+"\n"));
 			fio.close();
+			return null+"";
 		//	sharedState.EnterClick(new mainCommand());
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 	}
 
@@ -234,7 +272,7 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			dio.write("Please upload your local anomalies file.\n");
 			FileIO fio = new FileIO(sharedState.inputPath3,sharedState.anomaliesFile);
@@ -303,7 +341,13 @@ public class Commands {
 			float resFP = ((int)((FP+0.00000)/N*1000.0))/1000.0f;
 			System.out.println("True Positive Rate: "+resTP+"\n");
 			System.out.println("False Positive Rate: "+resFP+"\n");
+			return null+"";
 		//	sharedState.EnterClick(new mainCommand());
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 
 		public boolean isTP(long firstFromDetect,long lastFromDetect,long firstFromFile,long lastFromFile){
@@ -342,11 +386,18 @@ public class Commands {
 		}
 
 		@Override
-		public void execute() {
+		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			dio.write("bye");
 			System.out.println("server closed");
 			dio.close();
+			return null+"";
+
+		}
+
+		@Override
+		public String writeToClient(String text) {
+			return null+"";
 		}
 	}
 
