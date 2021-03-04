@@ -31,6 +31,7 @@ public class Commands {
 					if(line.equals(""))
 						continue;
 					writer.println(line);
+					System.out.println(line);
 				}
 				writer.close();
 			} catch (FileNotFoundException e) {
@@ -75,7 +76,7 @@ public class Commands {
 		String inputPath2 = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input2.txt";
 		String inputPath3 = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input3.txt";
 		String resultPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\result.txt";
-		String trainPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\trainFile.csv";
+		String trainPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\testTxt.txt";
 		String testPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\testFile.csv";
 		SimpleAnomalyDetector sad = new SimpleAnomalyDetector();
 		public void EnterClick(Command c) {
@@ -91,9 +92,6 @@ public class Commands {
 
 	private  SharedState sharedState=new SharedState();
 
-//	@CrossOrigin(origins = "*", allowedHeaders = "*")
-//	@Controller
-//	@RestController
 
 	// Command abstract class
 	public abstract class Command{
@@ -105,7 +103,6 @@ public class Commands {
 
 		public abstract String execute(String text);
 
-//		@GetMapping(path = "/ret/{text}", produces = MediaType.TEXT_PLAIN_VALUE)
 		public abstract String writeToClient( String text);
 	}
 
@@ -116,12 +113,11 @@ public class Commands {
 			super("Welcome to the Anomaly Detection Server.\n" +
 					"Please choose an option:\n");
 		}
-//		@PostMapping("/add")
 
 		@Override
 		public String execute(String text) {
 			CLI cli= new CLI(dio);
-			cli.commands.forEach(command -> dio.write( command.description));
+//			cli.commands.forEach(command -> dio.write( command.description));
 			int clientNumber = (int) dio.readVal();
 			cli.commands.get(clientNumber).execute("s");
 			return "";
@@ -133,28 +129,21 @@ public class Commands {
 		}
 	}
 
+
 	// Command class for example:
-	@CrossOrigin(value = {"http://localhost:3000"})
-	@RestController
-//	@RequestMapping("api")
 	public class uploadCommand extends Command{
 
 		public uploadCommand() {
 			super("1. upload a time series csv file\n");
 		}
-//		@RequestMapping("api/")
 
-//	@CrossOrigin
-	@Override
-		public String execute(String text) {
-
-		return  writeToClient("i am from server.\n");
-		}
-		@CrossOrigin(value = {"http://localhost:3000"})
-		@GetMapping(path = "/ret/text", produces = MediaType.TEXT_PLAIN_VALUE)
 		@Override
-		public String writeToClient(@RequestParam(defaultValue = "text") String text) {
-			System.out.println(text+" test");
+		public String execute(String text) {
+		return  "i am from server.\n";
+		}
+
+		@Override
+		public String writeToClient(String text) {
 			return text;
 		}
 
@@ -248,13 +237,22 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-			StandrtIO dio = new StandrtIO();
-			FileIO fio = new FileIO(sharedState.trainPath,sharedState.resultPath);
-			TimeSeries ts = new TimeSeries(sharedState.trainPath);
-			sharedState.sad.learnNormal(ts);
-			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
-			sharedState.sad.detect(ts2).forEach(d->fio.write(d.timeStep+" "+d.description+"\n"));
-			fio.close();
+			String path = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\hello2.txt";
+			try {
+				BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+				writer.write(text);
+				writer.close();
+				StandrtIO dio = new StandrtIO();
+				FileIO fio = new FileIO(path,sharedState.resultPath);
+				TimeSeries ts = new TimeSeries(path);
+				sharedState.sad.learnNormal(ts);
+				TimeSeries ts2 = new TimeSeries(sharedState.testPath);
+				sharedState.sad.detect(ts2).forEach(d->fio.write(d.timeStep+" "+d.description+"\n"));
+				fio.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
 			return null+"";
 		//	sharedState.EnterClick(new mainCommand());
 		}
