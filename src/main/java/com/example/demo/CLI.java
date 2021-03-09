@@ -46,8 +46,11 @@ public class CLI {
 
 	@CrossOrigin
 	@GetMapping("/add3/{str}")
-	public String something(@PathVariable String str) {
-	return "somethingGet";
+	public String something(@PathVariable String str,@RequestParam(defaultValue = "its not work",name = "parameter",value = "parameter") String parameter) {
+		System.out.println(str);
+//		System.out.println(parameter);
+
+	return commands.get(str).execute(parameter);
 	}
 
 	@CrossOrigin
@@ -56,7 +59,7 @@ public class CLI {
 
 		try {
 			str = new String(file.getBytes());
-			System.out.println(str);
+//			System.out.println(str);
 			commands.get("download").execute(str);
 			if(str.length()>=1)
 				return "succ";
