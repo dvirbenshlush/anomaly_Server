@@ -72,12 +72,10 @@ public class Commands {
 	private class SharedState{
 		float threshold= (float) 0.9;
 		String anomaliesFile = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\anomaliesFile.txt";
-		String inputPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input.txt";
-		String inputPath2 = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input2.txt";
-		String inputPath3 = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input3.txt";
+		String trainPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input.txt";
+		String testPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input2.txt";
+		String testPathToServer = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input3.txt";
 		String resultPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\result.txt";
-		String trainPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\testTxt.txt";
-		String testPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\testFile.csv";
 		SimpleAnomalyDetector sad = new SimpleAnomalyDetector();
 		public void EnterClick(Command c) {
 			String input=dio.readText();
@@ -158,20 +156,15 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-			StandrtIO dio = new StandrtIO();
-			dio.write("The current correlation threshold is " + sharedState.threshold + "\n");
-			dio.write("Type a new threshold or just press enter to exit without changing\n");
-			float val = dio.readVal();
-			sharedState.threshold = val;
-			if (sharedState.threshold < 1 && sharedState.threshold > 0) {
-				sharedState.EnterClick(new mainCommand());
-			} else {
-				dio.write("please choose a value between 0 and 1.\n");
-				return null+"";
-		//		sharedState.EnterClick(new algorithmCommand());
+			sharedState.threshold = (float) Double.parseDouble(text);
+			if (sharedState.threshold <= 1 && sharedState.threshold >= 0){
+				System.out.println("threshold update");
+				return "threshold update";
 			}
-
-			return "";
+			else {
+				System.out.println("please choose a value between 0 and 1.");
+				return "please choose a value between 0 and 1.\n";
+			}
 		}
 
 		@Override
@@ -191,7 +184,7 @@ public class Commands {
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			sharedState.sad.learnNormal(ts);
 //			sharedState.sad.getNormalModel().forEach(t->t.threshold=sharedState.threshold);
-			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
+			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 			sharedState.sad.detect(ts2);
 			dio.write("anomaly detection complete.\n");
 		//	sharedState.EnterClick(new mainCommand());
@@ -213,13 +206,14 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-			StandrtIO dio = new StandrtIO();
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
+			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 			sharedState.sad.learnNormal(ts);
-			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
-			sharedState.sad.detect(ts2).forEach(d->dio.write(d.timeStep+" "+d.description+"\n"));
-			dio.write("Done\n");
-			return null+"";
+			String result = "";
+			for (AnomalyReport anomalyReport : sharedState.sad.detect(ts2)) {
+				result+=anomalyReport.timeStep+" "+anomalyReport.description+"\n";
+			}
+			return result;
 		//	sharedState.EnterClick(new mainCommand());
 		}
 
@@ -237,18 +231,20 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-			String path = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\hello2.txt";
 			try {
-				BufferedWriter writer = new BufferedWriter(new FileWriter(path));
+				BufferedWriter writer = new BufferedWriter(new FileWriter(sharedState.testPathToServer));
 				writer.write(text);
 				writer.close();
 				StandrtIO dio = new StandrtIO();
-				FileIO fio = new FileIO(path,sharedState.resultPath);
-				TimeSeries ts = new TimeSeries(path);
-				sharedState.sad.learnNormal(ts);
-				TimeSeries ts2 = new TimeSeries(sharedState.testPath);
-				sharedState.sad.detect(ts2).forEach(d->fio.write(d.timeStep+" "+d.description+"\n"));
-				fio.close();
+				Scanner in=new Scanner(new FileReader(sharedState.resultPath));
+				if(!in.hasNext()) {
+					FileIO fio = new FileIO(sharedState.testPathToServer, sharedState.resultPath);
+					TimeSeries ts = new TimeSeries(sharedState.trainPath);
+					sharedState.sad.learnNormal(ts);
+					TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
+					sharedState.sad.detect(ts2).forEach(d -> fio.write(d.timeStep + " n " + d.description + "\n"));
+					fio.close();
+				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -273,12 +269,12 @@ public class Commands {
 		public String execute(String text) {
 			StandrtIO dio = new StandrtIO();
 			dio.write("Please upload your local anomalies file.\n");
-			FileIO fio = new FileIO(sharedState.inputPath3,sharedState.anomaliesFile);
+			FileIO fio = new FileIO(sharedState.testPathToServer,sharedState.anomaliesFile);
 			fio.uploadFile("done",sharedState.anomaliesFile);
 			dio.write("Upload complete.\n");
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			sharedState.sad.learnNormal(ts);
-			TimeSeries ts2 = new TimeSeries(sharedState.testPath);
+			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 			List<AnomalyReport> an=sharedState.sad.detect(ts2);
 			int N = ts.getColumn("A").length-an.size();
 			List<List<AnomalyReport>> anomalyArray = new ArrayList<>();

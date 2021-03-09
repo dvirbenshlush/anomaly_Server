@@ -9,7 +9,6 @@ public class FileIO implements DefaultIO{
 
 	Scanner in;
 	PrintWriter out;
-
 	public FileIO(String inputFileName,String outputFileName) {
 		try {
 			in=new Scanner(new FileReader(inputFileName));
