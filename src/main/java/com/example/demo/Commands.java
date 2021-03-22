@@ -1,20 +1,11 @@
 package com.example.demo;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
-import org.springframework.stereotype.Repository;
-import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.*;
-
 import java.io.*;
-import java.text.DecimalFormat;
 import java.util.*;
 
 public class Commands {
 
-	// Default IO interface
 	@Component
 	public interface DefaultIO{
 		public String readText();
@@ -77,15 +68,18 @@ public class Commands {
 		String testPathToServer = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\input3.txt";
 		String resultPath = "C:\\Users\\dvir\\Downloads\\demo\\src\\main\\java\\com\\example\\demo\\result.txt";
 		SimpleAnomalyDetector sad = new SimpleAnomalyDetector();
-		public void EnterClick(Command c) {
-			String input=dio.readText();
-			System.out.println(input);
-			while (!input.equals(""))
-			{
-				input=dio.readText();
-			}
-			c.execute("sdd");
+		public void initializeSAD(){
+			sad = new SimpleAnomalyDetector();
 		}
+//		public void EnterClick(Command c) {
+//			String input=dio.readText();
+//			System.out.println(input);
+//			while (!input.equals(""))
+//			{
+//				input=dio.readText();
+//			}
+//			c.execute("sdd");
+//		}
 	}
 
 	private  SharedState sharedState=new SharedState();
@@ -137,7 +131,9 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-		return  "i am from server.\n";
+//			TimeSeries ts = new TimeSeries(sharedState.trainPath);
+//			sharedState.sad.learnNormal(ts);
+			return  "i am from server.\n";
 		}
 
 		@Override
@@ -187,7 +183,6 @@ public class Commands {
 			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 			sharedState.sad.detect(ts2);
 			dio.write("anomaly detection complete.\n");
-		//	sharedState.EnterClick(new mainCommand());
 			return null+"";
 
 		}
@@ -209,12 +204,14 @@ public class Commands {
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 			sharedState.sad.learnNormal(ts);
+			//System.out.println("List<AnomalyReport>" + anomalies);
 			String result = "";
-			for (AnomalyReport anomalyReport : sharedState.sad.detect(ts2)) {
+			List<AnomalyReport> anomalies =  sharedState.sad.detect(ts2);
+
+			for (AnomalyReport anomalyReport : anomalies) {
 				result+=anomalyReport.timeStep+" "+anomalyReport.description+"\n";
 			}
 			return result;
-		//	sharedState.EnterClick(new mainCommand());
 		}
 
 		@Override
@@ -231,20 +228,21 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
+			sharedState.initializeSAD();
 			try {
 				BufferedWriter writer = new BufferedWriter(new FileWriter(sharedState.testPathToServer));
 				writer.write(text);
 				writer.close();
 				StandrtIO dio = new StandrtIO();
 				Scanner in=new Scanner(new FileReader(sharedState.resultPath));
-				if(!in.hasNext()) {
+//				if(!in.hasNext()) {
 					FileIO fio = new FileIO(sharedState.testPathToServer, sharedState.resultPath);
 					TimeSeries ts = new TimeSeries(sharedState.trainPath);
 					sharedState.sad.learnNormal(ts);
 					TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
 					sharedState.sad.detect(ts2).forEach(d -> fio.write(d.timeStep + " n " + d.description + "\n"));
 					fio.close();
-				}
+//				}
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -267,11 +265,7 @@ public class Commands {
 
 		@Override
 		public String execute(String text) {
-			StandrtIO dio = new StandrtIO();
-			dio.write("Please upload your local anomalies file.\n");
-			FileIO fio = new FileIO(sharedState.testPathToServer,sharedState.anomaliesFile);
-			fio.uploadFile("done",sharedState.anomaliesFile);
-			dio.write("Upload complete.\n");
+
 			TimeSeries ts = new TimeSeries(sharedState.trainPath);
 			sharedState.sad.learnNormal(ts);
 			TimeSeries ts2 = new TimeSeries(sharedState.testPathToServer);
