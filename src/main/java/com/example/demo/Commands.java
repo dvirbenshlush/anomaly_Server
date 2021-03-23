@@ -211,6 +211,7 @@ public class Commands {
 			for (AnomalyReport anomalyReport : anomalies) {
 				result+=anomalyReport.timeStep+" "+anomalyReport.description+"\n";
 			}
+			result= result.substring(0,result.length()-1);
 			return result;
 		}
 
@@ -329,8 +330,9 @@ public class Commands {
 			float resFP = ((int)((FP+0.00000)/N*1000.0))/1000.0f;
 			System.out.println("True Positive Rate: "+resTP+"\n");
 			System.out.println("False Positive Rate: "+resFP+"\n");
-			return null+"";
-		//	sharedState.EnterClick(new mainCommand());
+			String st1 = "True Positive Rate: "+resTP+"\n";
+			String st2 = "False Positive Rate: "+resFP+"\n";
+			return st1+st2;
 		}
 
 		@Override

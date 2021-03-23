@@ -39,7 +39,7 @@ public class SimpleAnomalyDetector  implements TimeSeriesAnomalyDetector {
 			}
 			listPoints = new Point[ts.map.get(names[0]).size()];
 		}
-		System.out.println("finished normalizing " + this.cf.size());
+//		System.out.println("finished normalizing " + this.cf.size());
 	}
 
 	private float findThreshold(Point points[],Line line){
